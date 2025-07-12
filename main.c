@@ -24,7 +24,7 @@ int main()
 
     //build(print) the world
     system("clear");
-    printf("Creating the world...");
+    printf("Creating the world...\033[?25l");//Hide the cursor
     for (int printY=0;printY<worldSizeY; printY++)
     {
         for (int printX=0;printX<worldSizeX; printX++)
@@ -59,17 +59,18 @@ int main()
         printf("\033[1;1H");
         printf("FRAME %d, [%.2f,%.2f] {%.2f,%.2f}",i,curX,curY,curForceX,curForceY);
         //Remove ball from last frame
-        printf("\033[%d;%dH", worldSizeY - (int)round(prevY), (int)round(prevY) + 1);
+        printf("\033[%d;%dH ", worldSizeY - (int)round(prevY), (int)round(prevX) + 1);
         printf(" ");
         //Print the ball on screen
         printf("\033[%d;%dH", worldSizeY - (int)round(curY), (int)round(curX) + 1);
         printf("*");
+        fflush(stdout);//ALL THE LETTERS, GET OUT THE BUFFER AND GO TO THE PLAYGROUND! NOW!!!
         
         //Backup ball location
         prevX=curX;
         prevY=curY;
         usleep(time_delay);//Delay       
     }
-
+    printf("\033[?25h");//Show the cursor
     return 0;
 }
