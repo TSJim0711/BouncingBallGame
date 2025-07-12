@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <unistd.h>
+#include <sys/time.h>
 
 double degree_2_radius (double degree)
 {
@@ -10,13 +11,16 @@ double degree_2_radius (double degree)
 
 int main()
 {
-    int gravity = 9.8;
+    float gravity = 4.8, air_friction_strength=0.02;
     int worldSizeX=60, worldSizeY=20;
     int world[worldSizeY][worldSizeX];//MAP
-    double curX=0, curY=0, prevX, prevY, curForceX, curForceY;
+    double curX=1, curY=1, prevX, prevY, curForceX, curForceY;
+    double delta_time,sim_time=0;
     int defaultAngl=60;
-    float defaultForce=1;
-    int time_delay=30000;
+    float defaultForce=3;
+    struct timeval delta_time_gravity_prev,delta_time_gravity_cur;
+    int dummy;
+    
     int exceed_map_X_flag=0,exceed_map_Y_flag=0;//if ball go to fast, it pass through the wall, active this flag, wall won't block the ball, deactivate it when the ball return to the map.
 
     curForceX=cos(degree_2_radius(defaultAngl))*defaultForce;
@@ -31,13 +35,20 @@ int main()
                 printf(" ");//print air
         printf("\n");
     }
+    dummy=gettimeofday(&delta_time_gravity_prev, NULL);
     for(int i=0;i<=2000;i++)
     {
-        //New position
-        curX=curX+curForceX;
-        curY=curY+curForceY;
+        //Get time diff between frame.
+        dummy=gettimeofday(&delta_time_gravity_cur, NULL);//Get current time and compare with previous time
+        delta_time=((delta_time_gravity_cur.tv_sec*1000000+delta_time_gravity_cur.tv_usec)-(delta_time_gravity_prev.tv_sec*1000000+delta_time_gravity_prev.tv_usec))/1000000.0;
+        delta_time_gravity_prev=delta_time_gravity_cur;
+        sim_time+=delta_time;
+
         //Gravity to force
-        curForceY-=gravity*(time_delay/10000000.0);
+        curForceY-=gravity*delta_time;
+        //Air Friction to force
+        curForceX-=curForceX*air_friction_strength;
+        curForceY-=curForceY*air_friction_strength;
         //Hit to force
         if((curX<=0 || curX>=worldSizeX) && !exceed_map_X_flag)
             {
@@ -54,10 +65,17 @@ int main()
             exceed_map_X_flag=0;
         if(curY>0 || curY<worldSizeY)
             exceed_map_Y_flag=0;
-
+        //Force too low == stop. As force can never be 0 in this programme
+        if(curForceX<0.2 && curForceX>-0.2)
+            curForceX=0;
+        if(curForceY<1 && curForceY>0)
+            curForceY=0;
+        //calculate new position
+        curX=curX+curForceX;
+        curY=curY+curForceY;
         //print frame
         printf("\033[1;1H");
-        printf("FRAME %d, [%.2f,%.2f] {%.2f,%.2f}",i,curX,curY,curForceX,curForceY);
+        printf("FRAME %d SIMed: %.2fms, [%.2f,%.2f] {%.2f,%.2f}     ",i,sim_time,curX,curY,curForceX,curForceY);
         //Remove ball from last frame
         printf("\033[%d;%dH ", worldSizeY - (int)round(prevY), (int)round(prevX) + 1);
         printf(" ");
@@ -69,7 +87,7 @@ int main()
         //Backup ball location
         prevX=curX;
         prevY=curY;
-        usleep(time_delay);//Delay       
+        usleep(30000);//Delay       
     }
     printf("\033[?25h");//Show the cursor
     return 0;
