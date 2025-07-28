@@ -1,11 +1,14 @@
+//World Code 0//
 #include <stdio.h>
-#include "testing_world.h"
+#include "world.h"
+#include "world_manager.h"
 
-int worldSizeY=20;
-int worldSizeX=45;
+double curX=10, curY=10;
+int worldSizeX=45, worldSizeY=20;
 struct pixel_info hitbox[20][45]={0};
+struct position starting_pos={.x=10, .y=10};
 
-void initialize_world()
+struct position initialize_test_world()
 {
     for(int i=0;i<worldSizeY;i++)
     {
@@ -25,9 +28,10 @@ void initialize_world()
         hitbox[worldSizeY-1][i].angle=0;
         hitbox[worldSizeY-1][i].force_absorb_rate=90;
     }
+    return starting_pos;
 }
     
-void print_world()//build(print) the world
+void print_test_world()//build(print) the world
 {
     for (int printY=0;printY<worldSizeY; printY++)
     {
@@ -37,7 +41,7 @@ void print_world()//build(print) the world
     }
 }
 
-struct pixel_info get_pixel_info(int x,int y)
+struct pixel_info get_test_world_pixel_info(int x,int y)
 {
     return hitbox[y][x];
 }

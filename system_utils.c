@@ -1,12 +1,15 @@
 #include <stdio.h>
 #include <time.h> // for clock_gettime
+#include <stdlib.h>
+#include <termios.h>
+#include <unistd.h> // For read()
 
 struct timespec cur_time, prev_time;
 long long delta_time_temp_ns;
 double delta_time_temp_sec, delta_time=0;
 double game_time=0;
 struct timespec private_prev_time[5];//
-
+static struct termios term_orig, term_no_print;//store terminal config
 
 void update_frame_timer()//Get time diff between frame.
 {
@@ -26,4 +29,20 @@ double get_frame_delta_time()
 double get_frame_game_time()
 {
     return game_time;
+}
+
+void initTermios() 
+{
+    tcgetattr(STDIN_FILENO, &term_orig);
+    term_no_print = term_orig;
+    term_no_print.c_lflag &= ~ICANON; //set to immediate input, no need press ENTER
+    term_no_print.c_lflag &= ~ECHO;//set term_no_print config -> terminal no echo
+}
+
+void term_print(int on_flag)
+{
+    if (on_flag)
+        tcsetattr(STDIN_FILENO, TCSANOW, &term_orig);//terminal echos
+    else
+        tcsetattr(STDIN_FILENO, TCSANOW, &term_no_print);//terminal no echo
 }
