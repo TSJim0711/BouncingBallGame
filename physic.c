@@ -15,13 +15,16 @@ float gravity = 6.8, air_friction_strength=0.2;
 double curSpeedX=0, curSpeedY=0, radius;
 struct ball_pos cur_pos={.position_x=1.0, .position_y=1.0};
 struct ball_pos prev_pos={.position_x=1.0, .position_y=1.0};
+struct pixel_info current_pixel_info_Up, current_pixel_info_Dwn, current_pixel_info_Rgh, current_pixel_info_Lft;
 
 
 int fixed_x=0,fixed_y=0;
 int hit_flag=0;
 
-double dda_distX,dda_distY,dda_total_dist,dda_next_pixel_distX,dda_next_pixel_distY,dda_deltaX,dda_deltaY,dda_traveled_dist;
-int dda_cursorX,dda_cursorY,dda_step_dirX,dda_step_dirY;
+double dda_route_dist_x,dda_route_dist_y, dda_total_dist, dda_traveled_dist;
+double dda_step_x,dda_step_y;
+struct ball_pos dda_cursor, dda_prev_cursor;
+
 
 int hit_angle=-1;
 int launch_angle=45;
@@ -45,14 +48,8 @@ void init_ball_status(int start_position_x, int start_position_y, int starting_a
 
 struct ball_pos get_ball_pos()
 {
-    struct pixel_info current_pixel_info_Up=get_pixel_info(0,(int)floor(cur_pos.position_y)+1,(int)floor(cur_pos.position_x));
-    struct pixel_info current_pixel_info_Dwn=get_pixel_info(0,(int)floor(cur_pos.position_y)-1,(int)floor(cur_pos.position_x));
-    struct pixel_info current_pixel_info_Rgh=get_pixel_info(0,(int)floor(cur_pos.position_y),(int)floor(cur_pos.position_x)+1);
-    struct pixel_info current_pixel_info_Lft=get_pixel_info(0,(int)floor(cur_pos.position_y),(int)floor(cur_pos.position_x)-1);
     //Gravity to Speed
-    if(dda_step_dirY==-1 && current_pixel_info_Dwn.is_wall==1 && current_pixel_info_Dwn.angle==0)//if ball not on platform and not yet going up, then provide downward speed from gravity
-        curSpeedY=0;
-    else
+    if(dda_route_dist_y>0 || current_pixel_info_Dwn.is_wall!=1 || current_pixel_info_Dwn.angle!=0)//if ball not on platform and not yet going up, then provide downward speed from gravity
         curSpeedY-=gravity*get_frame_delta_time();
 
     //Air Friction to Speed
@@ -65,77 +62,54 @@ struct ball_pos get_ball_pos()
     if(!fixed_y)
         cur_pos.position_y=cur_pos.position_y+curSpeedY;
 
-    //Ray-Grid Traversal Algorithm, detect if pass hitbox from prev to cur position
-    dda_distX=cur_pos.position_x-prev_pos.position_x;//distant betweeen prev and cur on a axis
-    dda_distY=cur_pos.position_y-prev_pos.position_y;
-    dda_total_dist=sqrt(pow(dda_distX,2)+pow(dda_distY,2))-0.5;//actual distance
+    //Line Traversal Alg, Simple Step Based
+    dda_route_dist_x=cur_pos.position_x-prev_pos.position_x;//distant betweeen prev and cur on a axis
+    dda_route_dist_y=cur_pos.position_y-prev_pos.position_y;
+    dda_total_dist=sqrt(pow(dda_route_dist_x,2)+pow(dda_route_dist_y,2));
+    dda_step_x=0.5*(dda_route_dist_x/dda_total_dist);//0.5 can be config, in the future, I guess '~'
+    dda_step_y=0.5*(dda_route_dist_y/dda_total_dist);
+    dda_traveled_dist=0;
 
-    dda_cursorX=floor(prev_pos.position_x);//starting point of dda algorithm
-    dda_cursorY=floor(prev_pos.position_y);
-
-    dda_step_dirX=(dda_distX>0)?1:-1;//dir for each step
-    dda_step_dirY=(dda_distY>0)?1:-1;//OMG fuck the ground
-
-    dda_deltaX = (dda_distX==0)?DBL_MAX :fabs(1.0/dda_distX);//distant needed for cursor to next pixel, now is ratio
-    dda_deltaY = (dda_distY==0)?DBL_MAX :fabs(1.0/dda_distY);
-
-    if (dda_distX > 0)//distant for current virtual cursor to next pixel, now is ratio
-        dda_next_pixel_distX = (floor(prev_pos.position_x) + 1.0 - prev_pos.position_x) * dda_deltaX;
-    else
-        dda_next_pixel_distX = (prev_pos.position_x - floor(prev_pos.position_x)) * dda_deltaX;
-    if (dda_distY > 0)
-        dda_next_pixel_distY = (floor(prev_pos.position_y) + 1.0 - prev_pos.position_y) * dda_deltaY;
-    else
-        dda_next_pixel_distY = (prev_pos.position_y - floor(prev_pos.position_y)) * dda_deltaY;
-    
-    if(dda_total_dist>0)//turn ratio to actual dist
-    {
-        dda_deltaX*=dda_total_dist;
-        dda_deltaY*=dda_total_dist;
-        dda_next_pixel_distX*=dda_total_dist;
-        dda_next_pixel_distY*=dda_total_dist;
-    }
-    if(fixed_x)//set distant to inf. Fixed=Never reach
-        dda_next_pixel_distX=DBL_MAX;
-    if(fixed_y)
-        dda_next_pixel_distY=DBL_MAX;
-    
-    dda_traveled_dist=0;//the virtual cursor of this algorithm traveled distant
     fprintf(logp,"From[%5.2f %5.2f] To [%5.2f %5.2f] Speed{%5.2f,%5.2f}: ",prev_pos.position_x,prev_pos.position_y,cur_pos.position_x,cur_pos.position_y,curSpeedX,curSpeedY);
+    dda_cursor.position_x=prev_pos.position_x;//set dda_cursor pos to current pos
+    dda_cursor.position_y=prev_pos.position_y;
     while (dda_traveled_dist < dda_total_dist) 
     {
-        if (dda_next_pixel_distX < dda_next_pixel_distY) {//to the nearest pixel, x or y axis
-            dda_cursorX += dda_step_dirX;//move virtual cursor 1 pixel forward
-            dda_traveled_dist = dda_next_pixel_distX;//add the dist to total dist
-            dda_next_pixel_distX += dda_deltaX;//add traveled distant to next_pixel_dist, reduce weight re-enter the if
-        } else {//same as above
-            dda_cursorY += dda_step_dirY;
-            dda_traveled_dist = dda_next_pixel_distY;
-            dda_next_pixel_distY += dda_deltaY;
-        }
-        fprintf(logp," [%2d %2d]",dda_cursorX,dda_cursorY);
-        current_pixel_info_Up=get_pixel_info(0,(int)floor(dda_cursorX),(int)floor(dda_cursorY)+1);
-        current_pixel_info_Dwn=get_pixel_info(0,(int)floor(dda_cursorX),(int)floor(dda_cursorY)-1);
-        current_pixel_info_Rgh=get_pixel_info(0,(int)floor(dda_cursorX)+1,(int)floor(dda_cursorY));
-        current_pixel_info_Lft=get_pixel_info(0,(int)floor(dda_cursorX)-1,(int)floor(dda_cursorY));
+        //cal next location with step
+        dda_cursor.position_x+=dda_step_x;
+        dda_cursor.position_y+=dda_step_y;
+        dda_traveled_dist+=0.5;
+        if(dda_cursor.position_x==dda_prev_cursor.position_x && dda_cursor.position_y==dda_prev_cursor.position_y)//repeat pixel, skip
+            continue;
+        dda_prev_cursor.position_x=dda_cursor.position_x;
+        dda_prev_cursor.position_y=dda_cursor.position_y;
         
-        if(dda_step_dirY==1  && current_pixel_info_Up.is_wall==1  && !fixed_y)//check if is a hit
+        fprintf(logp," [%2.0f %2.0f]",dda_cursor.position_x,dda_cursor.position_y);
+        current_pixel_info_Up=get_pixel_info(0,(int)floor(dda_cursor.position_x),(int)floor(dda_cursor.position_y)+1);
+        current_pixel_info_Dwn=get_pixel_info(0,(int)floor(dda_cursor.position_x),(int)floor(dda_cursor.position_y)-1);
+        current_pixel_info_Rgh=get_pixel_info(0,(int)floor(dda_cursor.position_x)+1,(int)floor(dda_cursor.position_y));
+        current_pixel_info_Lft=get_pixel_info(0,(int)floor(dda_cursor.position_x)-1,(int)floor(dda_cursor.position_y));
+        
+        if(dda_route_dist_x>0  && current_pixel_info_Up.is_wall==1  && !fixed_y)//check if is a hit
             hit_flag=hit_flag|0b1000; 
-        if(dda_step_dirY==-1 && current_pixel_info_Dwn.is_wall==1)
+        if(dda_route_dist_x<=0 && current_pixel_info_Dwn.is_wall==1)
             if(!fixed_y)
                 hit_flag=hit_flag|0b0100;
             else
-                curSpeedX*=0.1;//if fixed Y and on grond, speed reduce rate more. as bouncing is wonderful but sliding is bored.
-        if(dda_step_dirX==1  && current_pixel_info_Rgh.is_wall==1 && !fixed_x)
+                if(curSpeedX>1)//if fixed Y and on grond, slow. Bouncing is wonderful but sliding is bored.
+                    curSpeedX*=0.625;
+                else
+                    curSpeedX*=0.9375;
+        if(dda_route_dist_y>0  && current_pixel_info_Rgh.is_wall==1 && !fixed_x)
             hit_flag=hit_flag|0b0010;
-        if(dda_step_dirX==-1 && current_pixel_info_Lft.is_wall==1 && !fixed_x)
+        if(dda_route_dist_y<=0 && current_pixel_info_Lft.is_wall==1 && !fixed_x)
             hit_flag=hit_flag|0b0001;
         
         if(hit_flag>0)//Due with hit
         {
-            fprintf(logp," HIT! DIRX:%d, DIRY:%d",dda_step_dirX,dda_step_dirY);
-            cur_pos.position_x=dda_cursorX;//the ball set to cursor
-            cur_pos.position_y=dda_cursorY;
+            fprintf(logp," HIT!");
+            cur_pos.position_x=dda_cursor.position_x;//the ball set to cursor
+            cur_pos.position_y=dda_cursor.position_y;
             if(hit_flag&0b1000)
                 hit_angle=current_pixel_info_Up.angle;//ball upward,
             else if(hit_flag&0b0100)
@@ -152,8 +126,8 @@ struct ball_pos get_ball_pos()
                     hit_angle=(hit_angle+current_pixel_info_Lft.angle)/2;
 
             radius=degree_2_radius(2*hit_angle);//re calculate the speed of ball
-            curSpeedX=curSpeedX*cos(radius)+curSpeedY*sin(radius)*(0.95);//vx​=v0x​cos(2θ)+v0y​sin(2θ)*material absorb force
-            curSpeedY=curSpeedX*sin(radius)-curSpeedY*cos(radius)*(0.95);//vy​=v0x​sin(2θ)−v0y​cos(2θ)
+            curSpeedX=curSpeedX*cos(radius)+curSpeedY*sin(radius)*(0.8);//vx​=v0x​cos(2θ)+v0y​sin(2θ)*material absorb force
+            curSpeedY=curSpeedX*sin(radius)-curSpeedY*cos(radius)*(0.8);//vy​=v0x​sin(2θ)−v0y​cos(2θ)
             fprintf(logp," [%d %d] {%.2f,%.2f}",(int)cur_pos.position_x,(int)cur_pos.position_y,curSpeedX,curSpeedY);
             hit_angle=-1;//set used back to defualt
             hit_flag=0;

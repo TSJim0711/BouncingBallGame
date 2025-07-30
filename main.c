@@ -32,7 +32,7 @@ int main()
         printf(" ");
         //Print the ball on screen
         printf("\033[%d;%dH", 20 - (int)round(cur_pos.position_y), (int)round(cur_pos.position_x) + 1);
-        printf("*");
+        printf("O");
         fflush(stdout);//ALL THE LETTERS, GET OUT THE BUFFER AND GO TO THE PLAYGROUND! NOW!!!
         if(get_ball_stable_status()==2)//only trigger when ball is stable AKA return <0
         {
@@ -62,6 +62,11 @@ int main()
             } while (key_press!=' ');
             launch_ball();
             update_frame_timer();//drop delta time when input
+        }else
+        {
+            printf("\033[%d;%dH ", 21,0);
+            printf("                      >Bouncing<                                                  ");
+            fflush(stdout);
         }
         usleep(30000);//Delay       
     }
