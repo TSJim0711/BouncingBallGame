@@ -9,10 +9,9 @@ int main()
 {
     initTermios();
     system("clear");
-    printf("Creating the world...\033[?25l");//Hide the cursor
+    //printf("Creating the world...\033[?25l");//Hide the cursor
 
     initialize_world(0);
-    
     struct ball_pos cur_pos={.position_x=1.0, .position_y=1.0};
     struct ball_pos prev_pos={.position_x=1.0, .position_y=1.0};
 
@@ -22,11 +21,11 @@ int main()
     {
         update_frame_timer();
         prev_pos=cur_pos;
-        cur_pos=get_ball_pos();
+        cur_pos=get_ball_pos(0);
         
         //print frame
         printf("\033[1;1H");
-        printf("FRAME %d SIMed: %.2fms, [%.2f,%.2f]    ",i,get_frame_game_time(),cur_pos.position_x,cur_pos.position_y);
+        printf("FRAME %d SIMed: %.2fms, Score:%3d [%.2f,%.2f]    ",i,get_frame_game_time(),score,cur_pos.position_x,cur_pos.position_y);
         //Remove ball from last frame
         printf("\033[%d;%dH ", 20 - (int)round(prev_pos.position_y), (int)round(prev_pos.position_x) + 1);
         printf(" ");
@@ -34,13 +33,17 @@ int main()
         printf("\033[%d;%dH", 20 - (int)round(cur_pos.position_y), (int)round(cur_pos.position_x) + 1);
         printf("O");
         fflush(stdout);//ALL THE LETTERS, GET OUT THE BUFFER AND GO TO THE PLAYGROUND! NOW!!!
-        if(get_ball_stable_status()==2)//only trigger when ball is stable AKA return <0
+        if(get_ball_stable_status(0)==2)//only trigger when ball is stable AKA return <0
         {
             do      //Launch the ball when user press space bar
             {
                 printf("\033[%d;%dH ", 21,0);
                 printf("Angle <+S %03d D->    [SPACE TO BOUNCE]   <+K %05.2f L-> Force",launch_angle,launch_speed);
                 fflush(stdout);
+                phy_back_up_data();
+                predict_ball_route(1,10.0);
+                clear_predict_print();
+                phy_extract_data();
                 key_press=0;
                 read(STDIN_FILENO, &key_press, 1); //read 1 charactor from KB
                 switch (key_press)

@@ -8,5 +8,7 @@ extern int worldSizeX;
 struct position initialize_test_world();
 void print_test_world();
 struct pixel_info get_test_world_pixel_info(int x,int y);
+int test_world_recycle_star(int pos_x, int pos_y);
+void test_world_place_star();
 
 #endif

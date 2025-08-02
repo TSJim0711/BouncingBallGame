@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "world.h"
 #include "world_manager.h"
+#include "../system_utils.h"
 
 double curX=10, curY=10;
 int worldSizeX=45, worldSizeY=20;
@@ -15,7 +16,7 @@ struct position initialize_test_world()
         hitbox[i][0].is_wall=1;
         hitbox[i][0].angle=90;
         hitbox[i][0].force_absorb_rate=90;
-        hitbox[i][worldSizeX-1].is_wall=1;
+        hitbox[i][worldSizeX-1].is_wall=1;//0 = air, 1= wall, 2 = star
         hitbox[i][worldSizeX-1].angle=90;
         hitbox[i][worldSizeX-1].force_absorb_rate=90;
     }
@@ -39,9 +40,40 @@ void print_test_world()//build(print) the world
                 printf(" ");//print air
         printf("\n");
     }
+    test_world_place_star();
 }
 
 struct pixel_info get_test_world_pixel_info(int x,int y)
 {
     return hitbox[y][x];
+}
+
+int test_world_recycle_star(int pos_x, int pos_y)//when star is hit
+{
+    hitbox[pos_x][pos_y].is_wall=0;
+    hitbox[pos_x][pos_y].angle=0;
+    hitbox[pos_x][pos_y].force_absorb_rate=0;
+    printf("\033[%d;%dH ", 20 - pos_y,pos_x + 1);//remove star
+    printf(" ");
+    return 10;//score
+}
+
+void test_world_place_star()
+{
+    struct position star_pos;
+    while(1)
+    {
+        star_pos.x =get_random(2,worldSizeX-3);//random a position, not in wall
+        star_pos.y =get_random(2,worldSizeY-3);
+        if (hitbox[star_pos.y][star_pos.x].is_wall==0)
+        {
+            hitbox[star_pos.y][star_pos.x].is_wall=2;//set star
+            hitbox[star_pos.y][star_pos.x].angle=0;
+            hitbox[star_pos.y][star_pos.x].force_absorb_rate=0;
+            printf("\033[%d;%dH ", 20 - star_pos.y,star_pos.x + 1);//print the star on the position
+            printf("*");
+            fflush(stdout);//flush the stdout, the star symbol will be printed
+            return;
+        }
+    }
 }

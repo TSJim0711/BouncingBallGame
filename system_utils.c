@@ -46,3 +46,8 @@ void term_print(int on_flag)
     else
         tcsetattr(STDIN_FILENO, TCSANOW, &term_no_print);//terminal no echo
 }
+
+int get_random(int from, int to)
+{
+    return rand() % (to - from) + from;
+}
