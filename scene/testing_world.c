@@ -50,9 +50,9 @@ struct pixel_info get_test_world_pixel_info(int x,int y)
 
 int test_world_recycle_star(int pos_x, int pos_y)//when star is hit
 {
-    hitbox[pos_x][pos_y].is_wall=0;
-    hitbox[pos_x][pos_y].angle=0;
-    hitbox[pos_x][pos_y].force_absorb_rate=0;
+    hitbox[pos_y][pos_x].is_wall=0;
+    hitbox[pos_y][pos_x].angle=0;
+    hitbox[pos_y][pos_y].force_absorb_rate=0;
     printf("\033[%d;%dH ", 20 - pos_y,pos_x + 1);//remove star
     printf(" ");
     return 10;//score
@@ -71,7 +71,7 @@ void test_world_place_star()
             hitbox[star_pos.y][star_pos.x].angle=0;
             hitbox[star_pos.y][star_pos.x].force_absorb_rate=0;
             printf("\033[%d;%dH ", 20 - star_pos.y,star_pos.x + 1);//print the star on the position
-            printf("*");
+            printf("%s*%s","\x1b[33m","\x1b[0m");
             fflush(stdout);//flush the stdout, the star symbol will be printed
             return;
         }

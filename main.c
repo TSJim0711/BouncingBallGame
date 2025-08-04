@@ -5,6 +5,12 @@
 #include "system_utils.h"
 #include "physic.h"
 
+int bg_clr=0;//just for trail invoke()
+void rst_bg_clr()
+{
+    bg_clr=0;
+}
+
 int main()
 {
     initTermios();
@@ -16,6 +22,7 @@ int main()
     struct ball_pos prev_pos={.position_x=1.0, .position_y=1.0};
 
     char key_press='\0';
+    int prev_score=0;
     term_print(0);
     for(int i=0;i<=10000;i++)
     {
@@ -23,9 +30,16 @@ int main()
         prev_pos=cur_pos;
         cur_pos=get_ball_pos(0);
         
+        if(score!=prev_score)//just for invoke trail ()
+        {
+            prev_score=score;
+            bg_clr=43;
+            invoke(rst_bg_clr,0.2);// delay 0.2 and run that function
+
+        }
         //print frame
         printf("\033[1;1H");
-        printf("FRAME %d SIMed: %.2fms, Score:%3d [%.2f,%.2f]    ",i,get_frame_game_time(),score,cur_pos.position_x,cur_pos.position_y);
+        printf("FRAME %d SIMed: %.2fms, \x1b[0%dmScore:%3d\x1b[0m [%.2f,%.2f]    ",i,get_frame_game_time(),bg_clr,score,cur_pos.position_x,cur_pos.position_y);
         //Remove ball from last frame
         printf("\033[%d;%dH ", 20 - (int)round(prev_pos.position_y), (int)round(prev_pos.position_x) + 1);
         printf(" ");
@@ -71,7 +85,8 @@ int main()
             printf("                      >Bouncing<                                                  ");
             fflush(stdout);
         }
-        usleep(30000);//Delay       
+        usleep(30000);//Delay
+        invoke_handler();       
     }
     printf("\033[?25h");//Show the cursor
     return 0;
