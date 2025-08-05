@@ -1,6 +1,18 @@
 #ifndef SYSTEM_UTILS_H
 #define SYSTEM_UTILS_H
 
+struct position
+{
+    int x;
+    int y;
+};
+
+struct dbl_position
+{
+    double x;
+    double y;
+};
+
 void update_frame_timer();
 double get_frame_delta_time();
 double get_frame_game_time();

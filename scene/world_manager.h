@@ -1,6 +1,6 @@
 #ifndef WORLD_MANAGER_H
 #define WORLD_MANAGER_H
-
+#include "../system_utils.h"
 struct pixel_info 
 {
     int is_wall;
@@ -8,15 +8,10 @@ struct pixel_info
     int force_absorb_rate;
 };
 
-struct position
-{
-    int x;
-    int y;
-};
-
 void initialize_world(int world_code);
 struct pixel_info get_pixel_info(int world_code, int x,int y);
-void hit_star(int x,  int y);
+void recover_background(int x,int y);
+struct position hit_star(int x,  int y);
 extern int score;
 
 #endif

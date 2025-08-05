@@ -35,54 +35,35 @@ int main()
             prev_score=score;
             bg_clr=43;
             invoke(rst_bg_clr,0.2);// delay 0.2 and run that function
-
         }
         //print frame
         printf("\033[1;1H");
         printf("FRAME %d SIMed: %.2fms, \x1b[0%dmScore:%3d\x1b[0m [%.2f,%.2f]    ",i,get_frame_game_time(),bg_clr,score,cur_pos.position_x,cur_pos.position_y);
         //Remove ball from last frame
-        printf("\033[%d;%dH ", 20 - (int)round(prev_pos.position_y), (int)round(prev_pos.position_x) + 1);
-        printf(" ");
+        recover_background((int)round(prev_pos.position_x),(int)round(prev_pos.position_y));
         //Print the ball on screen
-        printf("\033[%d;%dH", 20 - (int)round(cur_pos.position_y), (int)round(cur_pos.position_x) + 1);
+        printf("\033[%d;%dH", 20 - (int)round(cur_pos.position_y)+2, (int)round(cur_pos.position_x) + 1);
         printf("O");
         fflush(stdout);//ALL THE LETTERS, GET OUT THE BUFFER AND GO TO THE PLAYGROUND! NOW!!!
         if(get_ball_stable_status(0)==2)//only trigger when ball is stable AKA return <0
         {
             do      //Launch the ball when user press space bar
             {
-                printf("\033[%d;%dH ", 21,0);
-                printf("Angle <+S %03d D->    [SPACE TO BOUNCE]   <+K %05.2f L-> Force",launch_angle,launch_speed);
-                fflush(stdout);
-                phy_back_up_data();
-                predict_ball_route(1,10.0);
-                clear_predict_print();
-                phy_extract_data();
+                printf("\033[%d;%dH ", 23,0);
+                printf("Dir <+S %03d D-> ↿SPACE↾ <+W %05.2f S-> Eng",launch_angle,launch_speed);
+                fflush(stdout);                
                 key_press=0;
                 read(STDIN_FILENO, &key_press, 1); //read 1 charactor from KB
-                switch (key_press)
-                {
-                case 's':
-                    launch_angle+=5;
-                    break;
-                case 'd':
-                    launch_angle-=5;
-                    break;
-                case'k':
-                    launch_speed+=0.5;
-                    break;
-                case'l':
-                    launch_speed-=0.5;
-                default:
-                    break;
-                }
+                clear_predict_print();
+                predict_ball_route(key_press,1,10.0);
             } while (key_press!=' ');
+            clear_predict_print();
             launch_ball();
             update_frame_timer();//drop delta time when input
         }else
         {
-            printf("\033[%d;%dH ", 21,0);
-            printf("                      >Bouncing<                                                  ");
+            printf("\033[%d;%dH ", 23,0);
+            printf("              >Bouncing<                                              ");
             fflush(stdout);
         }
         usleep(30000);//Delay

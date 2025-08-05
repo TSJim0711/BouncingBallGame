@@ -37,16 +37,35 @@ struct pixel_info get_pixel_info(int world_code, int x,int y)
     }
 }
 
-void hit_star(int x,  int y)
+struct position hit_star(int x,  int y)
 {
     switch (current_world)
     {
     case 0://Test World
         score+=test_world_recycle_star(x,y);
-        test_world_place_star();
+        return (test_world_place_star());
         break;
     
     default:
         {}//If it even possible?
+    }
+}
+
+void recover_background(int x,int y)//recover pixel after something cover the pixel
+{
+    printf("\033[%d;%dH", 22-y, x+1);
+    switch (current_world)
+    {
+        case 0://Test World
+            if(test_world_midground[y][x][0]!=0)//if midground have somthing, then print midground, else print background, else print space
+                printf("%s",test_world_midground[y][x]);
+            else if(test_world_background[y][x]!=0)
+                printf("\x1b[90m%c\x1b[0m",test_world_background[y][x]);
+            else
+                printf(" ");
+        break;
+    
+    default:
+        break;
     }
 }

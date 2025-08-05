@@ -5,64 +5,71 @@
 #include "../system_utils.h"
 
 double curX=10, curY=10;
-int worldSizeX=45, worldSizeY=20;
-char midground[20][45]={0};
-char background[20][45]={0};
+int test_world_worldSizeX=45, test_world_worldSizeY=20;
+char test_world_midground[20][46][20]={0};
+char test_world_background[20][45]={0};
 struct pixel_info hitbox[20][45]={0};
-struct position starting_pos={.x=10, .y=10};
+struct position starting_pos={.x=14, .y=6};
 
 struct position initialize_test_world()
 {
-    for(int i=0;i<worldSizeY;i++)
+    for(int i=0;i<test_world_worldSizeY;i++)
     {
         hitbox[i][0].is_wall=1;
         hitbox[i][0].angle=90;
         hitbox[i][0].force_absorb_rate=90;
-        midground[i][0]='|';
-        hitbox[i][worldSizeX-1].is_wall=1;//0 = air, 1= wall, 2 = star
-        hitbox[i][worldSizeX-1].angle=90;
-        hitbox[i][worldSizeX-1].force_absorb_rate=90;
-        midground[i][worldSizeX-1]='|';
+        strcpy(test_world_midground[i][0],"│");//right wall
+        hitbox[i][test_world_worldSizeX-1].is_wall=1;//0 = air, 1= wall, 2 = star
+        hitbox[i][test_world_worldSizeX-1].angle=90;
+        hitbox[i][test_world_worldSizeX-1].force_absorb_rate=90;
+        strcpy(test_world_midground[i][test_world_worldSizeX-1],"│");//left wall
     }
-    for(int i=0;i<worldSizeX;i++)
+    for(int i=0;i<test_world_worldSizeX;i++)
     {
         hitbox[0][i].is_wall=1;
         hitbox[0][i].angle=0;
         hitbox[0][i].force_absorb_rate=90;
-        midground[worldSizeY-1][i]='-';
-        hitbox[worldSizeY-1][i].is_wall=1;
-        hitbox[worldSizeY-1][i].angle=0;
-        hitbox[worldSizeY-1][i].force_absorb_rate=90;
-        midground[0][i]='-';
-        if(i>5 && i<40)
+        strcpy(test_world_midground[0][i],"─");//top roof
+        hitbox[test_world_worldSizeY-1][i].is_wall=1;
+        hitbox[test_world_worldSizeY-1][i].angle=0;
+        hitbox[test_world_worldSizeY-1][i].force_absorb_rate=90;
+        strcpy(test_world_midground[test_world_worldSizeY-1][i],"─");//ground
+        if(i>10 && i<44)
         {
-            hitbox[6][i].is_wall=1;//platform on the air
-            hitbox[6][i].angle=0;
-            hitbox[6][i].force_absorb_rate=90;
-            midground[worldSizeY-7][i]='_';
+            hitbox[4][i].is_wall=1;//platform on the air
+            hitbox[4][i].angle=0;
+            hitbox[4][i].force_absorb_rate=90;
+            strcpy(test_world_midground[4][i],"═");
         }
     }
+    strcpy(test_world_midground[test_world_worldSizeY-1][0],"┌");
+    strcpy(test_world_midground[test_world_worldSizeY-1][test_world_worldSizeX-1],"┐");
+    strcpy(test_world_midground[0][0],"└");
+    strcpy(test_world_midground[0][test_world_worldSizeX-1],"┘");
+    strcpy(test_world_midground[4][test_world_worldSizeX-1],"╡");
 
-    strcpy(background[5], "  ooooooooooooo                        .   ");
-    strcpy(background[6], "  8'   888   `8                      .o8   ");
-    strcpy(background[7], "       888       .ooooo.   .oooo.o .o888oo ");
-    strcpy(background[8], "       888      d88' `88b d88(  \"8   888   ");
-    strcpy(background[9], "       888      888ooo888 `\"Y88b.    888   ");
-    strcpy(background[10],"       888      888    .o o.  )88b   888 . ");
-    strcpy(background[11],"      o888o     `Y8bod8P' 8\"\"888P'   \"888\" ");
+    //ascii art in background
+    strcpy(test_world_background[16], "  ooooooooooooo                        .   ");
+    strcpy(test_world_background[15], "  8'   888   `8                      .o8   ");
+    strcpy(test_world_background[14], "       888       .oorooo.   .oooo.o .o888oo ");
+    strcpy(test_world_background[13], "       888      d88' `88b d88(  \"8   888   ");
+    strcpy(test_world_background[12], "       888      888ooo888 `\"Y88b.    888   ");
+    strcpy(test_world_background[11],"       888      888    .o o.  )88b   888 . ");
+    strcpy(test_world_background[10],"      o888o     `Y8bod8P' 8\"\"888P'   \"888\" ");
     return starting_pos;
 }
     
 void print_test_world()//build(print) the world
 {
-    for(int y=0;y<worldSizeY;y++)
+    printf("\n\n");
+    for(int y=test_world_worldSizeY-1;y>=0;y--)
     {
-        for(int x=0;x<worldSizeX;x++)
+        for(int x=0;x<test_world_worldSizeX;x++)
         {
-            if(midground[y][x]!=0)//if midground have somthing, then print midground, else print background, else print space
-                printf("%c",midground[y][x]);
-            else if(background[y][x]!=0)
-                printf("\x1b[90m%c\x1b[0m",background[y][x]);
+            if(test_world_midground[y][x][0]!=0)//if midground have somthing, then print midground, else print test_world_background, else print space
+                printf("%s",test_world_midground[y][x]);
+            else if(test_world_background[y][x]!=0)
+                printf("\x1b[90m%c\x1b[0m",test_world_background[y][x]);
             else
                 printf(" ");
         }
@@ -80,27 +87,27 @@ int test_world_recycle_star(int pos_x, int pos_y)//when star is hit
     hitbox[pos_y][pos_x].is_wall=0;
     hitbox[pos_y][pos_x].angle=0;
     hitbox[pos_y][pos_y].force_absorb_rate=0;
-    printf("\033[%d;%dH ", 20 - pos_y,pos_x + 1);//remove star
+    test_world_midground[pos_y][pos_x][0]=0;
+    printf("\033[%d;%dH ", 20 - pos_y+2,pos_x + 1);//remove star
     printf(" ");
     return 10;//score
 }
 
-void test_world_place_star()
+struct position test_world_place_star()
 {
     struct position star_pos;
     while(1)
     {
-        star_pos.x =get_random(2,worldSizeX-3);//random a position, not in wall
-        star_pos.y =get_random(2,worldSizeY-3);
+        star_pos.x =get_random(2,test_world_worldSizeX-2);//random a position, not in wall
+        star_pos.y =get_random(0,test_world_worldSizeY-10);
         if (hitbox[star_pos.y][star_pos.x].is_wall==0)
         {
             hitbox[star_pos.y][star_pos.x].is_wall=2;//set star
             hitbox[star_pos.y][star_pos.x].angle=0;
             hitbox[star_pos.y][star_pos.x].force_absorb_rate=0;
-            printf("\033[%d;%dH ", 20 - star_pos.y,star_pos.x + 1);//print the star on the position
-            printf("%s*%s","\x1b[33m","\x1b[0m");
-            fflush(stdout);//flush the stdout, the star symbol will be printed
-            return;
+            strcpy(test_world_midground[star_pos.y][star_pos.x],"\x1b[33m*\x1b[0m");
+            recover_background(star_pos.x,star_pos.y);
+            return star_pos;
         }
     }
 }
