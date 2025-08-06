@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include "physic.h"
 #include "system_utils.h"
 #include "scene/world_manager.h"
 
@@ -52,9 +53,6 @@ void init_ball_status(int start_position_x, int start_position_y, int starting_a
 
 struct dbl_position get_ball_pos(float predict_dist)//predict_dist=0:real move, else prediting
 {
-    if(current_pixel_info_Dwn.is_wall!=1 || current_pixel_info_Dwn.angle!=0)//if ball not on platform and not yet going up, then provide downward speed from gravity
-        curSpeedY-=gravity;
-
     if(curSpeedX<0.5 && curSpeedX>-0.5)//Speed too low == stop. As Speed can never be 0 in this programme
     {
             cur_pos.x=round(cur_pos.x);
@@ -71,6 +69,9 @@ struct dbl_position get_ball_pos(float predict_dist)//predict_dist=0:real move, 
         fixed_y=0;
         curSpeedY=-0.55;
     }
+    current_pixel_info_Dwn=get_pixel_info(0,(int)floor(cur_pos.x),(int)floor(cur_pos.y)-1);
+    if(current_pixel_info_Dwn.is_wall!=1 || current_pixel_info_Dwn.angle!=0)//if ball not on platform and not yet going up, then provide downward speed from gravity
+        curSpeedY-=gravity;
 
     //Air Friction to Speed
     curSpeedX-=curSpeedX*(air_friction_strength);
@@ -165,8 +166,8 @@ struct dbl_position get_ball_pos(float predict_dist)//predict_dist=0:real move, 
                     hit_angle=(hit_angle+current_pixel_info_Lft.angle)/2;
 
             radius=degree_2_radius(2*hit_angle);//re calculate the speed of ball
-            curSpeedX=curSpeedX*cos(radius)+curSpeedY*sin(radius)*(0.8);//vx​=v0x​cos(2θ)+v0y​sin(2θ)*material absorb force
-            curSpeedY=curSpeedX*sin(radius)-curSpeedY*cos(radius)*(0.8);//vy​=v0x​sin(2θ)−v0y​cos(2θ)
+            curSpeedX=curSpeedX*cos(radius)+curSpeedY*sin(radius)*(0.5);//vx​=v0x​cos(2θ)+v0y​sin(2θ)*material absorb force
+            curSpeedY=curSpeedX*sin(radius)-curSpeedY*cos(radius)*(0.5);//vy​=v0x​sin(2θ)−v0y​cos(2θ)
             if(predict_dist==0)
                 fprintf(log_real," [%d %d] {%.2f,%.2f}",(int)cur_pos.x,(int)cur_pos.y,curSpeedX,curSpeedY);
             else
@@ -218,7 +219,7 @@ void launch_ball()
     fixed_y=0;
 }
 
-void predict_ball_route(char key, int bounce_times, float dist)
+void action(char key, int bounce_times, float dist)
 {
     phy_back_up_data();
     if(key=='a'||key=='d')
@@ -234,19 +235,27 @@ void predict_ball_route(char key, int bounce_times, float dist)
             else if(key=='d' && launch_angle>0)
                 launch_angle-=10;
     }
-    if(key=='w'||key=='s')
+    else if(key=='w'||key=='s')
     {
         if(key=='w' && launch_speed<8)
             launch_speed+=0.5;
         else if(key=='s' && launch_speed>0)
             launch_speed-=0.5;
     }
+    else if(key==' ')
+    {
+        clear_predict_print();
+        launch_ball();
+        return;
+    }else
+        return;
+    clear_predict_print();
     curSpeedX=cos(degree_2_radius(launch_angle))*launch_speed;
     curSpeedY=sin(degree_2_radius(launch_angle))*launch_speed;   
     fixed_x=0;
     fixed_y=0;
     pred_cursor=0;
-    for(int i=0;i<bounce_times|| dist<0;i++)
+    for(int i=0;i<bounce_times && dist>0;i++)
     {   
         get_ball_pos(dist);
         printf("\x1b[90m");
@@ -256,7 +265,7 @@ void predict_ball_route(char key, int bounce_times, float dist)
             printf(".");
         }
         printf("\x1b[0m");
-        dist-=(dda_total_dist-( dda_total_dist));
+        dist-=dda_total_dist;
     }
     fflush(stdout);
     phy_extract_data();
