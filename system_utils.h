@@ -13,6 +13,12 @@ struct dbl_position
     double y;
 };
 
+struct zone
+{
+    struct position up_left;
+    struct position down_right;
+};
+
 void update_frame_timer();
 double get_frame_delta_time();
 double get_frame_game_time();

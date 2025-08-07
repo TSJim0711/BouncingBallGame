@@ -69,3 +69,10 @@ void recover_background(int x,int y)//recover pixel after something cover the pi
         break;
     }
 }
+
+void recover_background_batch(struct zone area_to_recover)
+{
+    for(int y=area_to_recover.up_left.y;y<area_to_recover.down_right.y;y++)
+        for(int x=area_to_recover.up_left.x;x<area_to_recover.down_right.x;x++)
+            recover_background(x,y);
+}

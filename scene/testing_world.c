@@ -34,7 +34,7 @@ struct position initialize_test_world()
         hitbox[test_world_worldSizeY-1][i].angle=0;
         hitbox[test_world_worldSizeY-1][i].force_absorb_rate=90;
         strcpy(test_world_midground[test_world_worldSizeY-1][i],"─");//ground
-        if(i>10 && i<44)
+        if(i>15 && i<test_world_worldSizeX)
         {
             hitbox[4][i].is_wall=1;//platform on the air
             hitbox[4][i].angle=0;
@@ -88,8 +88,7 @@ int test_world_recycle_star(int pos_x, int pos_y)//when star is hit
     hitbox[pos_y][pos_x].angle=0;
     hitbox[pos_y][pos_y].force_absorb_rate=0;
     test_world_midground[pos_y][pos_x][0]=0;
-    printf("\033[%d;%dH ", 20 - pos_y+2,pos_x + 1);//remove star
-    printf(" ");
+    recover_background(pos_x,pos_y);
     return 10;//score
 }
 

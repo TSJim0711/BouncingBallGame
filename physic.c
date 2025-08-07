@@ -59,6 +59,7 @@ struct dbl_position get_ball_pos(float predict_dist)//predict_dist=0:real move, 
             fixed_x=1;
             curSpeedX=0;
     }
+    current_pixel_info_Dwn=get_pixel_info(0,(int)floor(cur_pos.x),(int)floor(cur_pos.y)-1);
     if(curSpeedY<0.5 && curSpeedY>-0.5 && current_pixel_info_Dwn.is_wall==1 && current_pixel_info_Dwn.angle==0)//stop when up Speed too low
     {
             cur_pos.y=floor(cur_pos.y);
@@ -69,13 +70,15 @@ struct dbl_position get_ball_pos(float predict_dist)//predict_dist=0:real move, 
         fixed_y=0;
         curSpeedY=-0.55;
     }
-    current_pixel_info_Dwn=get_pixel_info(0,(int)floor(cur_pos.x),(int)floor(cur_pos.y)-1);
     if(current_pixel_info_Dwn.is_wall!=1 || current_pixel_info_Dwn.angle!=0)//if ball not on platform and not yet going up, then provide downward speed from gravity
         curSpeedY-=gravity;
 
     //Air Friction to Speed
     curSpeedX-=curSpeedX*(air_friction_strength);
     curSpeedY-=curSpeedY*(air_friction_strength);
+
+    if(curSpeedX==0 && curSpeedY==0)//no move, then no calculate
+        return cur_pos;
 
     //Calculate new position
     if(!fixed_x)
@@ -249,12 +252,13 @@ void action(char key, int bounce_times, float dist)
         return;
     }else
         return;
-    clear_predict_print();
+    
     curSpeedX=cos(degree_2_radius(launch_angle))*launch_speed;
     curSpeedY=sin(degree_2_radius(launch_angle))*launch_speed;   
     fixed_x=0;
     fixed_y=0;
     pred_cursor=0;
+    clear_predict_print();
     for(int i=0;i<bounce_times && dist>0;i++)
     {   
         get_ball_pos(dist);

@@ -12,6 +12,12 @@ void rst_bg_clr()
     bg_clr=0;
 }
 
+void dismiss_dialog()
+{
+    recover_background_batch((struct zone){(struct position){20,5},(struct position){45,16}});//the ascii art
+    recover_background_batch((struct zone){(struct position){1,1},(struct position){45,5}});//the dialog box
+}
+
 int main()
 {
     initTermios();
@@ -41,6 +47,62 @@ int main()
             prev_score=score;
             bg_clr=43;
             invoke(rst_bg_clr,0.2);// delay 0.2 and run that function
+            if (score==10)
+            {
+                const char *ascii_art =//23*18
+                "          ⠀⠀⣀⠤⠐⠂⠀⠐⠪⡝⣄⠀   \n"
+                "⠀⠀⠀⠀⠀⠀⠀⠀⢀⡿⡫⠂⠀⠀⠀⠀⠀⠀⠀⠱⠑⢄⠀⠀⠀\n"
+                "⠀⠀⠀⠀⠀⠀⠀⢠⠂⢠⠀⠀⠀⠀⠀⠀⠐⠀⠀⣰⣲⣮⣦⡀⠀\n"
+                "⠀⠖⡀⡀⠀⠀⠀⡆⡄⡸⠀⠀⣆⢠⠀⠀⠀⡇⠁⢻⣺⣿⣿⠃⠀\n"
+                "⢀⠸⠀⠀⢆⠀⠀⡗⣶⣷⡥⢸⢤⣾⣔⢅⢀⡇⠀⠘⢛⠚⠻⡀⠀\n"
+                "⠀⠈⠐⠢⡀⢣⣼⠀⠇⡹⠀⠀⠈⢠⢹⣿⢢⠁⡠⡑⢸⠘⠀⡇⠀\n"
+                "⠀⠀⠀⠀⠘⣾⢳⢾⠈⢀⣀⡀⠀⠘⠺⠃⡬⠊⠔⠀⠸⠀⠃⢸⠀\n"
+                "⠀⠀⠀⠀⠀⢿⠀⢊⠂⠘⣀⢀⠁⠀⠀⡴⠊⠀⠀⠀⡂⠆⠀⠀⡆\n"
+                "⠀⠀⠀⠀⠀⢸⡀⠈⠑⢼⣶⣤⠤⠤⠐⠀⠀⠀⢀⠨⠁⠀⢰⢸⢰\n"
+                "⠀⠀⠀⠀⠀⠀⠣⡀⢻⣿⡟⡀⠀⠀⠃⢀⠀⢂⠕⠁⠁⢀⠮⡈⢠\n"
+                "⠀⠀⠀⠀⠀⠀⠀⠀⣺⠿⣿⣤⡒⣀⢠⣧⣶⣿⣷⡀⡴⣿⢼⠧⠃\n"
+                "⠀⠀⠀⠀⠀⠀⠀⠀⣿⡖⣿⡙⢿⣿⣿⣿⣿⣿⣿⣿⠈⠀⠀⠀⠀\n"
+                "⠀⠀⠀⠀⠀⠀⠀⢀⣿⢳⣿⢻⣦⣿⣿⣿⣿⣿⣿⣿⡆⠀⠀⠀⠀\n"
+                "⠀⠀⠀⠀⠀⠀⠀⢸⣿⢸⣿⢸⣿⣿⣿⣿⣿⣿⣿⣿⣇⠀⠀⠀⠀\n";
+                int y=8;
+                printf("\033[%d;%dH", y,20);
+                for(int cursor=0;ascii_art[cursor]!='\0';cursor++)
+                {
+                    if (ascii_art[cursor]=='\n')
+                    {
+                        printf("\033[%d;%dH",++y,20);
+                        fflush(stdout);
+                    }
+                    else
+                        printf("%c",ascii_art[cursor]);
+                }
+                
+                for (int y=18; y<22;y++)
+                {
+                    printf("\033[%d;%dH", y,2);
+                    for(int x=2; x<45;x++)
+                    {
+                        if (y==18 && x==2)//corners
+                            printf("╭");
+                        else if (y==18 && x==44)
+                            printf("╮");
+                        else if (y==21 && x==2)
+                            printf("╰");
+                        else if (y==21 && x==44)
+                            printf("╯");
+                        else if ((y==18||y==21)&& (x>1&&x<45))//edges
+                            printf("─");
+                        else if(x==2||x==44)
+                            printf("│");
+                        else
+                            printf(" ");//content space
+                    }
+                }
+                printf("\033[%d;%dHName Here", 18,5);//title or name
+                printf("\033[%d;%dHWOW, you get 10 scores!",19,5);//content
+                printf("\033[%d;%dHSomething Somthing", 20,5);//content
+            }
+            invoke(dismiss_dialog,5);
         }
         //print frame
         printf("\033[1;1H");
